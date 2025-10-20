@@ -1,1 +1,129 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة المعلم - إجابات الطلاب</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f0f4f8;
+        }
 
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        tr:nth-child(even) {
+            background-color: #e8f0fe;
+        }
+
+        button.deleteBtn {
+            padding: 5px 10px;
+            background-color: #f44336;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+            button.deleteBtn:hover {
+                background-color: #d32f2f;
+            }
+    </style>
+</head>
+<body>
+
+    <h1>لوحة المعلم - إجابات الطلاب 📝</h1>
+    <table id="responsesTable">
+        <thead>
+            <tr>
+                <th>اسم الطالب</th>
+                <th>السؤال 1</th>
+                <th>السؤال 2</th>
+                <th>السؤال 3</th>
+                <th>السؤال 4</th>
+                <th>السؤال 5</th>
+                <th>السؤال 6</th>
+                <th>السؤال 7</th>
+                <th>السؤال 8</th>
+                <th>السؤال 9</th>
+                <th>السؤال 10</th>
+                <th>حذف</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+    </table>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+    <script>
+        // Firebase config
+        const firebaseConfig = {
+            apiKey: "AIzaSyDEyyB2fqdmDZfz-Lx-Sqp14rTRjpzgDs8",
+            authDomain: "school-e4923.firebaseapp.com",
+            databaseURL: "https://school-e4923-default-rtdb.firebaseio.com",
+            projectId: "school-e4923",
+            storageBucket: "school-e4923.firebasestorage.app",
+            messagingSenderId: "61066228437",
+            appId: "1:61066228437:web:e19b4f85dba29e91c7285c",
+            measurementId: "G-MXCB9HVLGN"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        // قراءة البيانات من Firebase وعرضها في الجدول
+        const tableBody = document.getElementById('tableBody');
+        database.ref('responses').on('value', snapshot => {
+            tableBody.innerHTML = ''; // امسح الجدول قبل الإضافة
+            const data = snapshot.val();
+            if (data) {
+                Object.entries(data).forEach(([studentID, student]) => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+            <td>${student.name}</td>
+            <td>${student.answers["1"] || ''}</td>
+            <td>${student.answers["2"] || ''}</td>
+            <td>${student.answers["3"] || ''}</td>
+            <td>${student.answers["4"] || ''}</td>
+            <td>${student.answers["5"] || ''}</td>
+            <td>${student.answers["6"] || ''}</td>
+            <td>${student.answers["7"] || ''}</td>
+            <td>${student.answers["8"] || ''}</td>
+            <td>${student.answers["9"] || ''}</td>
+            <td>${student.answers["10"] || ''}</td>
+            <td><button class="deleteBtn" onclick="deleteStudent('${studentID}')">حذف</button></td>
+          `;
+                    tableBody.appendChild(tr);
+                });
+            }
+        });
+
+        // دالة حذف الطالب
+        function deleteStudent(studentID) {
+            if (confirm("هل أنت متأكد من حذف إجابات هذا الطالب؟")) {
+                firebase.database().ref('responses/' + studentID).remove();
+            }
+        }
+    </script>
+
+</body>
+</html>
