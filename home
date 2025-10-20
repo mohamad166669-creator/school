@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>فيديو تفاعلي خصائص الأسماك</title>
+<style>
+  body { font-family: Arial, sans-serif; text-align: center; padding: 20px; background: #f0f4f8; }
+  #questionDiv { display: none; margin-top: 20px; }
+  .option-btn {
+    display: block;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 15px;
+    margin: 10px auto;
+    font-size: 16px;
+    border-radius: 10px;
+    width: 60%;
+    cursor: pointer;
+    transition: 0.3s;
+  }
+  .option-btn:hover { background-color: #45a049; }
+  input[type=text] { padding: 10px; width: 60%; margin: 10px auto; border-radius: 5px; border: 1px solid #ccc; }
+  button.submit { padding: 10px 20px; font-size: 16px; border-radius: 8px; cursor: pointer; background-color: #2196F3; color: white; border: none; }
+  button.submit:hover { background-color: #0b7dda; }
+</style>
+</head>
+<body>
+
+<h1>خصائص الأسماك 🐟</h1>
+<div id="player"></div>
+
+<div id="questionDiv">
+  <p id="questionText"></p>
+  <div id="optionsDiv"></div>
+</div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<script src="https://www.youtube.com/iframe_api"></script>
+<script>
+// Firebase config
+const firebaseConfig = {
+  apiKey: "AIzaSyDEyyB2fqdmDZfz-Lx-Sqp14rTRjpzgDs8",
+  authDomain: "school-e4923.firebaseapp.com",
+  databaseURL: "https://school-e4923-default-rtdb.firebaseio.com",
+  projectId: "school-e4923",
+  storageBucket: "school-e4923.firebasestorage.app",
+  messagingSenderId: "61066228437",
+  appId: "1:61066228437:web:e19b4f85dba29e91c7285c",
+  measurementId: "G-MXCB9HVLGN"
+};
+
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+const database = firebase.database();
+
+let player;
+let currentQuestionIndex = 0;
+let studentName = "";
+let studentAnswers = {};
+let studentID = "";
+
+// الأسئلة
+const questions = [
+  { time: 74, text: "1. كم يزن الحوت الأزرق؟", options: ["180 كيلو","180 طن","200 كيلو","200 طن"], id: "1" },
+  { time: 97, text: "2. جميع الأسماك فقاريات وتمتلك عمود فقري وجمجمة؟", options: ["صح","خطأ"], id: "2" },
+  { time: 125, text: "3. اشرح الجملة: 'جميع الأسماك من ذوات الدم البارد'", options: [], id: "3" },
+  { time: 136, text: "4. ما هي وظيفة الزعانف الذيلية والزعانف الصدرية أو الجانبية؟", options: ["الحركة","التوازن","التنفس"], id: "4" },
+  { time: 149, text: "5. وظيفة الزعانف الظهرية أو العلوية والزعانف السفلية أو الشرجية؟", options: ["التوازن والبقاء مستقيمة أثناء السباحة","حماية الجسم من المفترسات","تخزين الطاقة والغذاء","التنفس تحت الماء"], id: "5" },
+  { time: 170, text: "6. القشور أو الحراشف جميعها خشنة", options: ["صح","خطأ"], id: "6" },
+  { time: 219, text: "7. كيف تتنفس الأسماك؟", options: [], id: "7" },
+  { time: 248, text: "8. ماذا تسمى السمكة بعد الفقس؟", options: ["اليرقة","الزعنفة","البيضة","اليربوع"], id: "8" },
+  { time: 255, text: "9. فكروا - كيف تحمي الأسماك نفسها من الكائنات البحرية؟", options: [], id: "9" },
+  { time: 287, text: "10. كيف تتكاثر الأسماك؟", options: [], id: "10" }
+];
+
+// YouTube player
+function onYouTubeIframeAPIReady() {
+  studentName = prompt("أدخل اسمك مرة واحدة فقط:");
+  // انشاء ID فريد لكل طالب
+  studentID = Date.now() + "_" + studentName.replace(/\s+/g, "_");
+  
+  player = new YT.Player('player', {
+    height: '390',
+    width: '640',
+    videoId: 'Rs3Dt-jwM3w',
+    playerVars: { 'start': 41, 'rel': 0, 'enablejsapi': 1 },
+    events: { 'onStateChange': onPlayerStateChange }
+  });
+}
+
+// تحقق الوقت لعرض الأسئلة
+function onPlayerStateChange(event) {
+  if(event.data == YT.PlayerState.PLAYING) {
+    const checkTime = setInterval(() => {
+      if(currentQuestionIndex < questions.length) {
+        const q = questions[currentQuestionIndex];
+        if(player.getCurrentTime() >= q.time) {
+          player.pauseVideo();
+          showQuestion(q);
+          clearInterval(checkTime);
+        }
+      } else clearInterval(checkTime);
+    }, 500);
+  }
+}
+
+// عرض السؤال
+function showQuestion(q) {
+  const qDiv = document.getElementById('questionDiv');
+  const qText = document.getElementById('questionText');
+  const optionsDiv = document.getElementById('optionsDiv');
+
+  qText.innerText = q.text;
+  optionsDiv.innerHTML = '';
+
+  if(q.options.length > 0){
+    q.options.forEach(opt => {
+      const btn = document.createElement('button');
+      btn.innerText = opt;
+      btn.className = "option-btn";
+      btn.onclick = () => sendAnswer(q.id, opt);
+      optionsDiv.appendChild(btn);
+    });
+  } else {
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.id = 'textAnswer';
+    input.placeholder = 'اكتب إجابتك هنا';
+    const submitBtn = document.createElement('button');
+    submitBtn.innerText = 'إرسال';
+    submitBtn.className = 'submit';
+    submitBtn.onclick = () => sendAnswer(q.id, document.getElementById('textAnswer').value);
+    optionsDiv.appendChild(input);
+    optionsDiv.appendChild(submitBtn);
+  }
+
+  qDiv.style.display = 'block';
+}
+
+// إرسال الإجابة إلى Firebase
+function sendAnswer(questionID, answer) {
+  studentAnswers[questionID] = answer;
+
+  // حفظ كل الإجابات مع اسم الطالب وID فريد في Firebase
+  firebase.database().ref('responses/' + studentID).set({
+    name: studentName,
+    answers: studentAnswers
+  });
+
+  document.getElementById('questionDiv').style.display = 'none';
+  currentQuestionIndex++;
+  player.playVideo();
+}
+</script>
+</body>
+</html>
